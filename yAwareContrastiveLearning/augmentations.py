@@ -34,12 +34,11 @@ def interval(obj, lower=None):
         raise ValueError("Wrong interval boudaries.")
     return tuple(obj)
 
+Transform = namedtuple("Transform", ["transform", "probability"])
 
 class Transformer(object):
     """ Class that can be used to register a sequence of transformations.
     """
-    Transform = namedtuple("Transform", ["transform", "probability"])
-
     def __init__(self):
         """ Initialize the class.
         """
@@ -54,7 +53,7 @@ class Transformer(object):
         probability: float, default 1
             the transform is applied with the specified probability.
         """
-        trf = self.Transform(transform=transform, probability=probability, )
+        trf = Transform(transform=transform, probability=probability, )
         self.transforms.append(trf)
 
     def __call__(self, arr):
@@ -269,5 +268,3 @@ class Noise(object):
             transformed += np.square(noise[1])
             transformed = np.sqrt(transformed)
         return transformed
-
-

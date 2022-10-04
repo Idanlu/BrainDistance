@@ -25,18 +25,13 @@ class Config:
             self.tf = "all_tf"
             self.model = "DenseNet"
 
+            self.pretrained_path = "DenseNet121_BHB-10K_yAwareContrastive.pth"
 
             # Paths to the data
-            self.data_train = "/path/to/your/training/data.npy"
-            self.label_train = "/path/to/your/training/metadata.csv"
-
-            self.data_val = "/path/to/your/validation/data.npy"
-            self.label_val = "/path/to/your/validation/metadata.csv"
-
             self.input_size = (1, 121, 145, 121)
             self.label_name = "age"
 
-            self.checkpoint_dir = "/path/to/your/saving/directory/"
+            self.checkpoint_dir = "../checkpoint/"
 
         elif self.mode == FINE_TUNING:
             ## We assume a classification task here
@@ -44,12 +39,12 @@ class Config:
             self.nb_epochs_per_saving = 10
             self.pin_mem = True
             self.num_cpu_workers = 1
-            self.nb_epochs = 100
+            self.nb_epochs = 50
             self.cuda = True
             # Optimizer
-            self.lr = 1e-4
+            self.lr = 0.0001
             self.weight_decay = 5e-5
 
             self.pretrained_path = "DenseNet121_BHB-10K_yAwareContrastive.pth"
-            self.num_classes = 2
+            self.num_classes = 10
             self.model = "DenseNet"

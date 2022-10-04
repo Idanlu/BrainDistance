@@ -42,6 +42,7 @@ class yAwareCLModel:
     def pretraining(self):
         print(self.loss)
         print(self.optimizer)
+        losses = {'train':[], 'validation':[]}
 
         for epoch in range(self.config.nb_epochs):
 
@@ -62,6 +63,7 @@ class yAwareCLModel:
                 self.optimizer.step()
                 training_loss += float(batch_loss) / nb_batch
             pbar.close()
+            losses['train'].append(training_loss)
 
             ## Validation step
             nb_batch = len(self.loader_val)
@@ -83,6 +85,7 @@ class yAwareCLModel:
                             val_values[name] = 0
                         val_values[name] += metric(logits, target) / nb_batch
             pbar.close()
+            losses['validation'].append(val_loss)
 
             metrics = "\t".join(["Validation {}: {:.4f}".format(m, v) for (m, v) in val_values.items()])
             print("Epoch [{}/{}] Training loss = {:.4f}\t Validation loss = {:.4f}\t".format(
@@ -95,7 +98,8 @@ class yAwareCLModel:
                 torch.save({
                     "epoch": epoch,
                     "model": self.model.state_dict(),
-                    "optimizer": self.optimizer.state_dict()},
+                    "optimizer": self.optimizer.state_dict(),
+                    "losses": losses},
                     os.path.join(self.config.checkpoint_dir, "{name}_epoch_{epoch}.pth".
                                  format(name="y-Aware_Contrastive_MRI", epoch=epoch)))
 
@@ -103,12 +107,13 @@ class yAwareCLModel:
     def fine_tuning(self):
         print(self.loss)
         print(self.optimizer)
+        losses = {'train':[], 'validation':[]}
 
         for epoch in range(self.config.nb_epochs):
             ## Training step
             self.model.train()
             nb_batch = len(self.loader)
-            training_loss = []
+            training_loss = 0
             pbar = tqdm(total=nb_batch, desc="Training")
             for (inputs, labels) in self.loader:
                 pbar.update()
@@ -119,8 +124,9 @@ class yAwareCLModel:
                 batch_loss = self.loss(y,labels)
                 batch_loss.backward()
                 self.optimizer.step()
-                training_loss += float(batch_loss) / nb_batch
+                training_loss += float(batch_loss.item()) / nb_batch
             pbar.close()
+            losses['train'].append(training_loss)
 
             ## Validation step
             nb_batch = len(self.loader_val)
@@ -136,12 +142,18 @@ class yAwareCLModel:
                     batch_loss = self.loss(y, labels)
                     val_loss += float(batch_loss) / nb_batch
             pbar.close()
+            losses['validation'].append(val_loss)
 
             print("Epoch [{}/{}] Training loss = {:.4f}\t Validation loss = {:.4f}\t".format(
                 epoch+1, self.config.nb_epochs, training_loss, val_loss), flush=True)
 
             if self.scheduler is not None:
                 self.scheduler.step()
+
+        torch.save({"losses": losses,
+                    "model": self.model.state_dict(),
+                    "optimizer": self.optimizer.state_dict()},
+                    f"fine_tune_epoch_{epoch+1}.pth")
 
 
     def load_model(self, path):

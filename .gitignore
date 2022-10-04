@@ -1,0 +1,8 @@
+FastSurfer/
+__pycache__/
+data/
+fslbuild/
+nifti_clib/
+rbet/
+other/
+.ipynb_checkpoints/

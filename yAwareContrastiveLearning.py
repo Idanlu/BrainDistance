@@ -43,6 +43,7 @@ class yAwareCLModel:
         print(self.loss)
         print(self.optimizer)
         losses = {'train':[], 'validation':[]}
+        print("Started Pretraining")
 
         for epoch in range(self.config.nb_epochs):
 
@@ -58,6 +59,8 @@ class yAwareCLModel:
                 self.optimizer.zero_grad()
                 z_i = self.model(inputs[:, 0, :])
                 z_j = self.model(inputs[:, 1, :])
+                print(inputs[:,0,0])
+                print(inputs[:,1,0])
                 batch_loss, logits, target = self.loss(z_i, z_j, labels)
                 batch_loss.backward()
                 self.optimizer.step()

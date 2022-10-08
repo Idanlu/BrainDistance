@@ -10,19 +10,18 @@ class Config:
         self.mode = mode
 
         if self.mode == PRETRAINING:
-            self.batch_size = 64
+            self.batch_size = 1
             self.nb_epochs_per_saving = 1
             self.pin_mem = True
-            self.num_cpu_workers = 8
-            self.nb_epochs = 100
+            self.num_cpu_workers = 1
+            self.nb_epochs = 50
             self.cuda = True
             # Optimizer
             self.lr = 1e-4
             self.weight_decay = 5e-5
             # Hyperparameters for our y-Aware InfoNCE Loss
-            self.sigma = 5 # depends on the meta-data at hand
+            self.sigma = 1 # depends on the meta-data at hand
             self.temperature = 0.1
-            self.tf = "all_tf"
             self.model = "DenseNet"
 
             self.pretrained_path = "DenseNet121_BHB-10K_yAwareContrastive.pth"

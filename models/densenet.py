@@ -158,6 +158,8 @@ class DenseNet(nn.Module):
             out = F.adaptive_avg_pool3d(out, 1)
             out = torch.flatten(out, 1)
             out = self.classifier(out)
+            out = F.softmax(out, dim=1)
+
         elif self.mode == "encoder":
             out = F.relu(features, inplace=True)
             out = F.adaptive_avg_pool3d(out, 1)

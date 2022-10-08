@@ -3,9 +3,8 @@ import torch
 from torch.nn import DataParallel
 from tqdm import tqdm
 import logging
-
-
-
+import numpy as np
+import sys
 
 class yAwareCLModel:
 
@@ -21,7 +20,11 @@ class yAwareCLModel:
         scheduler (optional)
         """
         super().__init__()
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
         self.logger = logging.getLogger("yAwareCL")
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.DEBUG)
         self.loss = loss
         self.model = net
         self.optimizer = torch.optim.Adam(net.parameters(), lr=config.lr, weight_decay=config.weight_decay)
@@ -34,10 +37,10 @@ class yAwareCLModel:
         self.config = config
         self.metrics = {}
 
+        self.model = DataParallel(self.model).to(self.device)
+
         if hasattr(config, 'pretrained_path') and config.pretrained_path is not None:
             self.load_model(config.pretrained_path)
-
-        self.model = DataParallel(self.model).to(self.device)
 
     def pretraining(self):
         print(self.loss)
@@ -52,16 +55,14 @@ class yAwareCLModel:
             nb_batch = len(self.loader)
             training_loss = 0
             pbar = tqdm(total=nb_batch, desc="Training")
-            for (inputs, labels) in self.loader:
+            for (inputs, labels, paths) in self.loader:
                 pbar.update()
                 inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
                 self.optimizer.zero_grad()
                 z_i = self.model(inputs[:, 0, :])
                 z_j = self.model(inputs[:, 1, :])
-                print(inputs[:,0,0])
-                print(inputs[:,1,0])
-                batch_loss, logits, target = self.loss(z_i, z_j, labels)
+                batch_loss, logits, target = self.loss(z_i, z_j)
                 batch_loss.backward()
                 self.optimizer.step()
                 training_loss += float(batch_loss) / nb_batch
@@ -75,13 +76,13 @@ class yAwareCLModel:
             val_values = {}
             with torch.no_grad():
                 self.model.eval()
-                for (inputs, labels) in self.loader_val:
+                for (inputs, labels, paths) in self.loader_val:
                     pbar.update()
                     inputs = inputs.to(self.device)
                     labels = labels.to(self.device)
                     z_i = self.model(inputs[:, 0, :])
                     z_j = self.model(inputs[:, 1, :])
-                    batch_loss, logits, target = self.loss(z_i, z_j, labels)
+                    batch_loss, logits, target = self.loss(z_i, z_j)
                     val_loss += float(batch_loss) / nb_batch
                     for name, metric in self.metrics.items():
                         if name not in val_values:
@@ -99,12 +100,12 @@ class yAwareCLModel:
 
             if (epoch % self.config.nb_epochs_per_saving == 0 or epoch == self.config.nb_epochs - 1) and epoch > 0:
                 torch.save({
-                    "epoch": epoch,
+                    "epoch": epoch+1,
                     "model": self.model.state_dict(),
                     "optimizer": self.optimizer.state_dict(),
                     "losses": losses},
                     os.path.join(self.config.checkpoint_dir, "{name}_epoch_{epoch}.pth".
-                                 format(name="y-Aware_Contrastive_MRI", epoch=epoch)))
+                                 format(name="ntxent_Contrastive_MRI", epoch=epoch+1)))
 
 
     def fine_tuning(self):
@@ -118,7 +119,7 @@ class yAwareCLModel:
             nb_batch = len(self.loader)
             training_loss = 0
             pbar = tqdm(total=nb_batch, desc="Training")
-            for (inputs, labels) in self.loader:
+            for (inputs, labels, paths) in self.loader:
                 pbar.update()
                 inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
@@ -137,7 +138,7 @@ class yAwareCLModel:
             val_loss = 0
             with torch.no_grad():
                 self.model.eval()
-                for (inputs, labels) in self.loader_val:
+                for (inputs, labels, paths) in self.loader_val:
                     pbar.update()
                     inputs = inputs.to(self.device)
                     labels = labels.to(self.device)
@@ -153,14 +154,18 @@ class yAwareCLModel:
             if self.scheduler is not None:
                 self.scheduler.step()
 
-        torch.save({"losses": losses,
+            if (epoch % self.config.nb_epochs_per_saving == 0 or epoch == self.config.nb_epochs - 1) and epoch > 0:
+                torch.save({
+                    "epoch": epoch+1,
                     "model": self.model.state_dict(),
-                    "optimizer": self.optimizer.state_dict()},
-                    f"fine_tune_epoch_{epoch+1}.pth")
+                    "optimizer": self.optimizer.state_dict(),
+                    "losses": losses},
+                    f"{self.config.checkpoint_dir}/fine_tune_epoch_{epoch+1}.pth")
 
 
     def load_model(self, path):
         checkpoint = None
+        self.logger.debug("Loading model")
         try:
             checkpoint = torch.load(path, map_location=lambda storage, loc: storage)
         except BaseException as e:

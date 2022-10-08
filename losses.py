@@ -35,7 +35,7 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
     def forward(self, z_i, z_j, labels):
         N = len(z_i)
         assert N == len(labels), "Unexpected labels length: %i"%len(labels)
-        print(labels)
+
         z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1) # dim [N, D]
         sim_zii= (z_i @ z_i.T) / self.temperature # dim [N, N] => Upper triangle contains incorrect pairs
@@ -52,7 +52,6 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         # if 'rbf' kernel and sigma->0, we retrieve the classical NTXenLoss (without labels)
         sim_Z = torch.cat([torch.cat([sim_zii, sim_zij], dim=1), torch.cat([sim_zij.T, sim_zjj], dim=1)], dim=0) # [2N, 2N]
         log_sim_Z = func.log_softmax(sim_Z, dim=1)
-        print(log_sim_Z)
 
         loss = -1./N * (torch.from_numpy(weights).to(z_i.device) * log_sim_Z).sum()
 
@@ -85,11 +84,13 @@ class NTXenLoss(nn.Module):
 
     def forward(self, z_i, z_j):
         N = len(z_i)
+
         z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1) # dim [N, D]
         sim_zii= (z_i @ z_i.T) / self.temperature # dim [N, N] => Upper triangle contains incorrect pairs
         sim_zjj = (z_j @ z_j.T) / self.temperature # dim [N, N] => Upper triangle contains incorrect pairs
         sim_zij = (z_i @ z_j.T) / self.temperature # dim [N, N] => the diag contains the correct pairs (i,j) (x transforms via T_i and T_j)
+
         # 'Remove' the diag terms by penalizing it (exp(-inf) = 0)
         sim_zii = sim_zii - self.INF * torch.eye(N, device=z_i.device)
         sim_zjj = sim_zjj - self.INF * torch.eye(N, device=z_i.device)

@@ -3,6 +3,10 @@ import numpy as np
 import pandas as pd
 import torch
 from augmentations import Transformer, Crop, Cutout, Noise, Normalize, Blur, Flip
+import os
+import joblib
+from config import PRETRAINING
+from torch import Tensor
 
 class MRIDataset(Dataset):
 
@@ -60,10 +64,9 @@ class MRIDataset(Dataset):
         return len(self.data)
 
 class CustomImageDataset(Dataset):
-    def __init__(self, annotations_file, img_dir, mode):
+    def __init__(self, config, annotations_file, img_dir, mode):
         self.img_labels = pd.read_csv(annotations_file)
         self.img_dir = img_dir
-        self.input_size = (1, 121, 145, 121)
         self.mode = mode
 
         self.transforms = Transformer()
@@ -71,7 +74,7 @@ class CustomImageDataset(Dataset):
         #self.transforms.register(Flip(), probability=0.5)
         #self.transforms.register(Blur(sigma=(0.1, 0.2)), probability=0.5)
         #self.transforms.register(Noise(sigma=(0.1, 0.2)), probability=0.5)
-        self.transforms.register(Cutout(patch_size=np.ceil(np.array(self.input_size)/4)), probability=1)
+        self.transforms.register(Cutout(patch_size=np.ceil(np.array(config.input_size)/2)), probability=1)
         #self.transforms.register(Crop(np.ceil(0.75*np.array(self.input_size)), "random", resize=True), probability=0.5)
     def __len__(self):
         return len(self.img_labels)
@@ -88,9 +91,10 @@ class CustomImageDataset(Dataset):
             x2 = torch.nan_to_num(Tensor(x2.copy()))
             x = np.stack((x1, x2), axis=0)
         else:
-            x = self.transforms(image)
+            #x = self.transforms(image)
+            x = image
             x = torch.nan_to_num(Tensor(x.copy()))
         label = self.img_labels.iloc[idx, 1]
         
 
-        return (x, label)
+        return (x, label, self.img_labels.iloc[idx, 0])

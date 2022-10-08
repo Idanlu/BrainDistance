@@ -4,23 +4,21 @@ import os
 import joblib
 from dataset import MRIDataset, CustomImageDataset
 from torch.utils.data import DataLoader, Dataset, RandomSampler
-from torch import Tensor
 import torch
 from yAwareContrastiveLearning import yAwareCLModel
-from losses import GeneralizedSupervisedNTXenLoss
+from losses import GeneralizedSupervisedNTXenLoss, NTXenLoss
 from torch.nn import CrossEntropyLoss
 from models.densenet import densenet121
 from models.unet import UNet
 import argparse
 from config import Config, PRETRAINING, FINE_TUNING
-from augmentations import Transformer, Crop, Cutout, Noise, Normalize, Blur, Flip
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, choices=["pretraining", "finetuning"], required=True,
                         help="Set the training mode. Do not forget to configure config.py accordingly !")
-    parser.add_argument("--dir", type=str, default='.',
+    parser.add_argument("--dir", type=str, default='data/',
                         help="The input directory that contains the labels and processed data")
     args = parser.parse_args()
     mode = PRETRAINING if args.mode == "pretraining" else FINE_TUNING
@@ -28,8 +26,8 @@ if __name__ == "__main__":
     config = Config(mode)
 
     ## Fill with your target dataset
-    dataset_train = CustomImageDataset(args.dir + '/train.csv', args.dir + '/Processed/', mode)
-    dataset_val = CustomImageDataset(args.dir + '/test.csv', args.dir + '/Processed/', mode)
+    dataset_train = CustomImageDataset(config, args.dir + '/train.csv', args.dir + '/Processed/', mode)
+    dataset_val = CustomImageDataset(config, args.dir + '/test.csv', args.dir + '/Processed/', mode)
 
     loader_train = DataLoader(dataset_train,
                               batch_size=config.batch_size,
@@ -52,16 +50,17 @@ if __name__ == "__main__":
             raise ValueError("Unkown model: %s"%config.model)
     else:
         if config.model == "DenseNet":
-            net = densenet121(mode="classifier", drop_rate=0.0, num_classes=config.num_classes, memory_efficient=True)
+            net = densenet121(mode="classifier", drop_rate=0.0, num_classes=config.num_classes, memory_efficient=False)
         elif config.model == "UNet":
             net = UNet(config.num_classes, mode="classif")
         else:
             raise ValueError("Unkown model: %s"%config.model)
     if config.mode == PRETRAINING:
-        loss = GeneralizedSupervisedNTXenLoss(temperature=config.temperature,
-                                              kernel='rbf',
-                                              sigma=config.sigma,
-                                              return_logits=True)
+        # loss = GeneralizedSupervisedNTXenLoss(temperature=config.temperature,
+        #                                       kernel='rbf',
+        #                                       sigma=config.sigma,
+        #                                       return_logits=True)
+        loss = NTXenLoss(temperature=config.temperature,return_logits=True)
     elif config.mode == FINE_TUNING:
         loss = CrossEntropyLoss()
 

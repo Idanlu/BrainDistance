@@ -94,7 +94,7 @@ class CustomImageDataset(Dataset):
             #x = self.transforms(image)
             x = image
             x = torch.nan_to_num(Tensor(x.copy()))
-        label = self.img_labels.iloc[idx, 1]
+        label = self.img_labels.iloc[idx, 2] # take the family index
         
 
         return (x, label, self.img_labels.iloc[idx, 0])

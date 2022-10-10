@@ -130,13 +130,14 @@ class DenseNet(nn.Module):
 
         self.num_features = num_features
 
-        if self.mode == "classifier":
-            # Final batch norm
-            self.features.add_module('norm5', nn.BatchNorm3d(num_features))
+        # Final batch norm
+        self.features.add_module('norm5', nn.BatchNorm3d(num_features))
+        self.hidden_representation = nn.Linear(num_features, 512)        
+
+        if self.mode == "classifier":    
             # Linear layer
-            self.classifier = nn.Linear(num_features, num_classes)
+            self.classifier = nn.Linear(512, num_classes)
         elif self.mode == "encoder":
-            self.hidden_representation = nn.Linear(num_features, 512)
             self.head_projection = nn.Linear(512, 128)
 
         # Init. with kaiming
@@ -153,20 +154,18 @@ class DenseNet(nn.Module):
         ## Eventually keep the input images for visualization
         self.input_imgs = x.detach().cpu().numpy()
         features = self.features(x)
+
+        out = F.relu(features, inplace=True)
+        out = F.adaptive_avg_pool3d(out, 1)
+        out = torch.flatten(out, 1)
+        out = self.hidden_representation(out)
+        out = F.relu(out, inplace=True)
+
         if self.mode == "classifier":
-            out = F.relu(features, inplace=True)
-            out = F.adaptive_avg_pool3d(out, 1)
-            out = torch.flatten(out, 1)
             out = self.classifier(out)
             out = F.softmax(out, dim=1)
 
         elif self.mode == "encoder":
-            out = F.relu(features, inplace=True)
-            out = F.adaptive_avg_pool3d(out, 1)
-            out = torch.flatten(out, 1)
-
-            out = self.hidden_representation(out)
-            out = F.relu(out, inplace=True)
             out = self.head_projection(out)
 
         return out.squeeze(dim=1)

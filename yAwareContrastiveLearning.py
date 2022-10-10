@@ -113,6 +113,11 @@ class yAwareCLModel:
         print(self.optimizer)
         losses = {'train':[], 'validation':[]}
 
+        # freeze all layers except the classification layer
+        # for name, param in self.model.named_parameters():
+        #     if 'classifier' not in name:
+        #         param.requires_grad = False
+
         for epoch in range(self.config.nb_epochs):
             ## Training step
             self.model.train()

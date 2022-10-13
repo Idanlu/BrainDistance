@@ -62,7 +62,9 @@ class yAwareCLModel:
                 self.optimizer.zero_grad()
                 z_i = self.model(inputs[:, 0, :])
                 z_j = self.model(inputs[:, 1, :])
-                batch_loss, logits, target = self.loss(z_i, z_j)
+                z = torch.stack((z_i, z_j), dim=1)
+                #batch_loss, logits, target = self.loss(z_i, z_j)
+                batch_loss = self.loss(z, labels)
                 batch_loss.backward()
                 self.optimizer.step()
                 training_loss += float(batch_loss) / nb_batch
@@ -82,7 +84,9 @@ class yAwareCLModel:
                     labels = labels.to(self.device)
                     z_i = self.model(inputs[:, 0, :])
                     z_j = self.model(inputs[:, 1, :])
-                    batch_loss, logits, target = self.loss(z_i, z_j)
+                    z = torch.stack((z_i, z_j), dim=1)
+                    #batch_loss, logits, target = self.loss(z_i, z_j)
+                    batch_loss = self.loss(z, labels)
                     val_loss += float(batch_loss) / nb_batch
                     for name, metric in self.metrics.items():
                         if name not in val_values:

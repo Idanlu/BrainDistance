@@ -12,7 +12,7 @@ class Config:
         self.checkpoint_dir = "checkpoint/"
 
         if self.mode == PRETRAINING:
-            self.batch_size = 8
+            self.batch_size = 10
             self.nb_epochs_per_saving = 1
             self.pin_mem = True
             self.num_cpu_workers = 1
@@ -43,6 +43,6 @@ class Config:
             self.weight_decay = 5e-5
 
             #self.pretrained_path = "checkpoint/ntxent_Contrastive_MRI_epoch_50_80_80_32_mam.pth"
-            self.pretrained_path = "checkpoint/ntxent_Contrastive_MRI_epoch_12.pth"
+            self.pretrained_path = "checkpoint/ntxent_Contrastive_MRI_epoch_44_5_classes_SupCon.pth"           
             self.num_classes = 5
             self.model = "DenseNet"

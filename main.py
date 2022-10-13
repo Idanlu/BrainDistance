@@ -6,7 +6,7 @@ from dataset import MRIDataset, CustomImageDataset
 from torch.utils.data import DataLoader, Dataset, RandomSampler
 import torch
 from yAwareContrastiveLearning import yAwareCLModel
-from losses import GeneralizedSupervisedNTXenLoss, NTXenLoss
+from losses import GeneralizedSupervisedNTXenLoss, NTXenLoss, SupConLoss
 from torch.nn import CrossEntropyLoss
 from models.densenet import densenet121
 from models.unet import UNet
@@ -60,7 +60,8 @@ if __name__ == "__main__":
         #                                       kernel='rbf',
         #                                       sigma=config.sigma,
         #                                       return_logits=True)
-        loss = NTXenLoss(temperature=config.temperature,return_logits=True)
+        #loss = NTXenLoss(temperature=config.temperature,return_logits=True)
+        loss = SupConLoss(temperature=config.temperature)
     elif config.mode == FINE_TUNING:
         loss = CrossEntropyLoss()
 

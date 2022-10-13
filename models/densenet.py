@@ -150,7 +150,7 @@ class DenseNet(nn.Module):
             elif isinstance(m, nn.Linear):
                 nn.init.constant_(m.bias, 0)
 
-    def forward(self, x):
+    def forward(self, x, return_hidden=False):
         ## Eventually keep the input images for visualization
         self.input_imgs = x.detach().cpu().numpy()
         features = self.features(x)
@@ -158,8 +158,10 @@ class DenseNet(nn.Module):
         out = F.relu(features, inplace=True)
         out = F.adaptive_avg_pool3d(out, 1)
         out = torch.flatten(out, 1)
-        out = self.hidden_representation(out)
-        out = F.relu(out, inplace=True)
+        hidden = self.hidden_representation(out)
+        if return_hidden:
+            return hidden
+        out = F.relu(hidden, inplace=True)
 
         if self.mode == "classifier":
             out = self.classifier(out)

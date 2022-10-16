@@ -1,4 +1,4 @@
-
+CLASSES = ['Bovidae', 'Cervidae', 'Canidae', 'Felidae', 'Mustelidae']
 PRETRAINING = 0
 FINE_TUNING = 1
 
@@ -43,6 +43,6 @@ class Config:
             self.weight_decay = 5e-5
 
             #self.pretrained_path = "checkpoint/ntxent_Contrastive_MRI_epoch_50_80_80_32_mam.pth"
-            self.pretrained_path = "checkpoint/ntxent_Contrastive_MRI_epoch_44_5_classes_SupCon.pth"           
+            #self.pretrained_path = "checkpoint/ntxent_Contrastive_MRI_epoch_44_5_classes_SupCon.pth"           
             self.num_classes = 5
             self.model = "DenseNet"

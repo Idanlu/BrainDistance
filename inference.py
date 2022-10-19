@@ -47,6 +47,9 @@ def get_embeddings(loader, net, unknown=False):
     return embed, y_true
 
 def plot_losses(losses):
+    min_epoch = losses['validation'].index(min(losses['validation']))+1
+    print(f'Epoch with minimum validation loss: {min_epoch}')
+    plt.figure(figsize=(3, 2), dpi=300)
     plt.plot(range(len(losses['train'])), losses['train'], label="train")
     plt.plot(range(len(losses['validation'])), losses['validation'], label="validation")
     plt.legend()
@@ -66,7 +69,9 @@ def plot_latent_space(loader, net):
     embed, y_true = get_embeddings(loader, net)
     tsne = TSNE(n_components=2, random_state=123, n_iter=10000)
     z = tsne.fit_transform(embed) 
-    scatter = plt.scatter(x=z[:,0], y=z[:,1], c=y_true)
+    cmap = plt.cm.get_cmap('Set1').copy()
+    cmap = matplotlib.colors.ListedColormap(cmap.colors[:len(CLASSES)])
+    scatter = plt.scatter(x=z[:,0], y=z[:,1], c=y_true, cmap=cmap)
     plt.legend(handles=scatter.legend_elements()[0], labels=CLASSES)
     plt.savefig('latent_space.png', bbox_inches = 'tight', dpi=300)
     plt.close()
@@ -78,6 +83,7 @@ if __name__ == "__main__":
     parser.add_argument("model_path", type=str, help="Path to the checkpoint file of the model")
     parser.add_argument("--dir", type=str, default='data/',
                         help="The input directory that contains the labels and processed data. By default: data/")
+    parser.add_argument("-l", action='store_true', help="Output only the training losses")
     args = parser.parse_args()
 
     dataset_test = CustomImageDataset(config, args.dir + '/test.csv', args.dir + '/Processed/', FINE_TUNING)
@@ -89,13 +95,15 @@ if __name__ == "__main__":
 
     checkpoint = torch.load(args.model_path)
 
-    net = densenet121(mode="classifier", drop_rate=0.0, num_classes=5)
+    net = densenet121(mode="classifier", drop_rate=0.0, num_classes=len(CLASSES))
     net = torch.nn.DataParallel(net).to('cuda')
     net.load_state_dict(checkpoint['model'])
 
+
     plot_losses(checkpoint['losses'])
-    plot_confusion_matrix(loader_test, net)
-    plot_latent_space(loader_test, net)
+    if not args.l:
+        plot_confusion_matrix(loader_test, net)
+        plot_latent_space(loader_test, net)
 
 
 

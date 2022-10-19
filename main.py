@@ -43,7 +43,7 @@ if __name__ == "__main__":
                             )
     if config.mode == PRETRAINING:
         if config.model == "DenseNet":
-            net = densenet121(mode="encoder", drop_rate=0.0)
+            net = densenet121(mode="encoder", drop_rate=0.0, memory_efficient=True)
         elif config.model == "UNet":
             net = UNet(config.num_classes, mode="simCLR")
         else:
@@ -56,12 +56,10 @@ if __name__ == "__main__":
         else:
             raise ValueError("Unkown model: %s"%config.model)
     if config.mode == PRETRAINING:
-        # loss = GeneralizedSupervisedNTXenLoss(temperature=config.temperature,
-        #                                       kernel='rbf',
-        #                                       sigma=config.sigma,
-        #                                       return_logits=True)
-        #loss = NTXenLoss(temperature=config.temperature,return_logits=True)
-        loss = SupConLoss(temperature=config.temperature)
+        if config.loss == 'NTXent':
+            loss = NTXenLoss(temperature=config.temperature,return_logits=True)
+        else:
+            loss = SupConLoss(temperature=config.temperature)
     elif config.mode == FINE_TUNING:
         loss = CrossEntropyLoss()
 

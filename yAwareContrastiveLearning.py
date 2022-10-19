@@ -60,11 +60,15 @@ class yAwareCLModel:
                 inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
                 self.optimizer.zero_grad()
+
                 z_i = self.model(inputs[:, 0, :])
                 z_j = self.model(inputs[:, 1, :])
-                z = torch.stack((z_i, z_j), dim=1)
-                #batch_loss, logits, target = self.loss(z_i, z_j)
-                batch_loss = self.loss(z, labels)
+                if self.config.loss == 'NTXent':
+                    batch_loss, logits, target = self.loss(z_i, z_j)
+                else:
+                    z = torch.stack((z_i, z_j), dim=1)
+                    batch_loss = self.loss(z, labels)
+
                 batch_loss.backward()
                 self.optimizer.step()
                 training_loss += float(batch_loss) / nb_batch
@@ -82,11 +86,15 @@ class yAwareCLModel:
                     pbar.update()
                     inputs = inputs.to(self.device)
                     labels = labels.to(self.device)
+
                     z_i = self.model(inputs[:, 0, :])
                     z_j = self.model(inputs[:, 1, :])
-                    z = torch.stack((z_i, z_j), dim=1)
-                    #batch_loss, logits, target = self.loss(z_i, z_j)
-                    batch_loss = self.loss(z, labels)
+                    if self.config.loss == 'NTXent':
+                        batch_loss, logits, target = self.loss(z_i, z_j)
+                    else:
+                        z = torch.stack((z_i, z_j), dim=1)
+                        batch_loss = self.loss(z, labels)
+
                     val_loss += float(batch_loss) / nb_batch
                     for name, metric in self.metrics.items():
                         if name not in val_values:
@@ -109,7 +117,7 @@ class yAwareCLModel:
                     "optimizer": self.optimizer.state_dict(),
                     "losses": losses},
                     os.path.join(self.config.checkpoint_dir, "{name}_epoch_{epoch}.pth".
-                                 format(name="ntxent_Contrastive_MRI", epoch=epoch+1)))
+                                 format(name=self.config.loss, epoch=epoch+1)))
 
 
     def fine_tuning(self):
@@ -170,7 +178,22 @@ class yAwareCLModel:
                     "optimizer": self.optimizer.state_dict(),
                     "losses": losses},
                     f"{self.config.checkpoint_dir}/fine_tune_epoch_{epoch+1}.pth")
+    
+    def load_checkpoint(self, state_dict):
+        model_state_dict = self.model.state_dict()
+        for k in state_dict:
+            if k in model_state_dict:
+                if state_dict[k].shape != model_state_dict[k].shape:
+                    self.logger.info(f"Skip loading parameter: {k}, "
+                                f"required shape: {model_state_dict[k].shape}, "
+                                f"loaded shape: {state_dict[k].shape}")
+                    state_dict[k] = model_state_dict[k]
+                    is_changed = True
+            else:
+                self.logger.info(f"Dropping parameter {k}")
+                is_changed = True
 
+        self.model.load_state_dict(state_dict, strict=False)
 
     def load_model(self, path):
         checkpoint = None
@@ -186,7 +209,7 @@ class yAwareCLModel:
                     self.logger.info('Model loading info: {}'.format(unexpected))
                 elif isinstance(checkpoint, dict):
                     if "model" in checkpoint:
-                        unexpected = self.model.load_state_dict(checkpoint["model"], strict=False)
+                        unexpected = self.load_checkpoint(checkpoint["model"])
                         self.logger.info('Model loading info: {}'.format(unexpected))
                 else:
                     unexpected = self.model.load_state_dict(checkpoint)

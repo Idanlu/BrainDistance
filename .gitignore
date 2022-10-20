@@ -6,4 +6,3 @@ nifti_clib/
 rbet/
 other/
 .ipynb_checkpoints/
-*.pth

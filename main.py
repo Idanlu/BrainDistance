@@ -5,7 +5,7 @@ import joblib
 from dataset import MRIDataset, CustomImageDataset
 from torch.utils.data import DataLoader, Dataset, RandomSampler
 import torch
-from yAwareContrastiveLearning import yAwareCLModel
+from contrastiveLearning import CLModel
 from losses import GeneralizedSupervisedNTXenLoss, NTXenLoss, SupConLoss
 from torch.nn import CrossEntropyLoss
 from models.densenet import densenet121
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     elif config.mode == FINE_TUNING:
         loss = CrossEntropyLoss()
 
-    model = yAwareCLModel(net, loss, loader_train, loader_val, config)
+    model = CLModel(net, loss, loader_train, loader_val, config)
 
     if config.mode == PRETRAINING:
         model.pretraining()

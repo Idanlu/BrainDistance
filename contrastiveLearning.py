@@ -6,7 +6,7 @@ import logging
 import numpy as np
 import sys
 
-class yAwareCLModel:
+class CLModel:
 
     def __init__(self, net, loss, loader_train, loader_val, config, scheduler=None):
         """

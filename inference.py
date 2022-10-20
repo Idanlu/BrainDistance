@@ -7,7 +7,6 @@ from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score
 from sklearn.manifold import TSNE
 from torch.utils.data import DataLoader, Dataset, RandomSampler
 import torch
-from yAwareContrastiveLearning import yAwareCLModel
 from losses import GeneralizedSupervisedNTXenLoss, NTXenLoss, SupConLoss
 from torch.nn import CrossEntropyLoss
 from models.densenet import densenet121

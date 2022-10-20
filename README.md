@@ -1,5 +1,5 @@
 # MaMIClass
-Classifying mammalian brains using supervised and unsupervised contrastive learning. Originally used for classifying MRI scans from the MaMI dataset (![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6376544.svg)).
+Classifying mammalian brains using supervised and unsupervised contrastive learning. Originally used for classifying MRI scans from the MaMI dataset (![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6376544.svg)). See [Mammalian_Brain_Classification.pdf](Mammalian_Brain_Classification.pdf) for the full report.
 
 ## Data Processing
 To get access to the data, please contact me. 
@@ -27,4 +27,4 @@ Models trained on 5 mammalian families:
 - `fine_tune_epoch_77_pretrained_supcon.pth` - Taking the pretrained model and training it on the MaMI data using SupCon loss, only then finetuning it using cross entropy loss.
 
 Model trained on all 12 available mammalian families:
-- `fine_tune_epoch_199_all.pth` - Trained in the same manner as pretrained + SupCon, using batch size 32 instead of 10 on the SupCon training stage. 
+- `fine_tune_epoch_199_all.pth` - Trained in the same manner as pretrained + SupCon, using batch size 32 instead of 10 on the SupCon training stage.
